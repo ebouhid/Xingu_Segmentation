@@ -17,6 +17,7 @@ BATCH_SIZE = 8
 NUM_EPOCHS = 100
 NUM_FOLDS = 5
 PATCH_SIZE = 256
+STRIDE_SIZE = 32
 STYLE = 'FromScratch'
 compositions = {"GA-1,4,5,6,7": [1, 4, 5, 6, 7]}
 
@@ -74,17 +75,18 @@ for COMPOSITION in compositions:
 
             print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
             # instantiating datasets
-            train_ds = XinguDataset('./xingu_dataset_v6/scenes_allbands',
-                                    './xingu_dataset_v6/truth_masks',
+            train_ds = XinguDataset('./dataset/scenes_allbands',
+                                    './dataset/truth_masks',
                                     encoder,
                                     compositions[COMPOSITION],
                                     train_regions,
                                     PATCH_SIZE,
+                                    STRIDE_SIZE,
                                     transforms=True)
-            test_ds = XinguDataset('./xingu_dataset_v6/scenes_allbands',
-                                   './xingu_dataset_v6/truth_masks', encoder,
+            test_ds = XinguDataset('./dataset/scenes_allbands',
+                                   './dataset/truth_masks', encoder,
                                    compositions[COMPOSITION], test_regions,
-                                   PATCH_SIZE)
+                                   PATCH_SIZE, STRIDE_SIZE)
 
             writer = SummaryWriter(
                 log_dir=
