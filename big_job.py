@@ -9,11 +9,11 @@ import glob
 import time
 import numpy as np
 
-BATCH_SIZE = 8
+BATCH_SIZE = 64
 NUM_EPOCHS = 100
 NUM_FOLDS = 5
 PATCH_SIZE = 256
-STRIDE_SIZE = 32
+STRIDE_SIZE = 64
 STYLE = 'FromScratch'
 compositions = {
     "False Color Urban": [7, 6, 4],
@@ -22,7 +22,9 @@ compositions = {
     "Color Infrared": [5, 4, 3],
     "Vegetative Analysis": [6, 5, 4],
     "Shortwave Infrared": [7, 5, 4],
-    "GA-1,4,5,6,7": [1, 4, 5, 6, 7]
+    "GA-156": [1, 5, 6],
+    "GA-1456": [1, 4, 5, 6],
+    "GA-146": [1, 4, 6]
 }
 
 regions_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
