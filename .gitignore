@@ -9,4 +9,3 @@ __pycache__
 dataset_test.ipynb
 *.out
 *.yml
-selected_models.py

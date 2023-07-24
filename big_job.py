@@ -9,8 +9,8 @@ import glob
 import time
 import numpy as np
 
-BATCH_SIZE = 64
-NUM_EPOCHS = 100
+BATCH_SIZE = 32
+NUM_EPOCHS = 30
 NUM_FOLDS = 5
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
