@@ -1,5 +1,3 @@
-# Reduced job
-
 import torch
 import segmentation_models_pytorch as smp
 import segmentation_models_pytorch.utils as smpu
@@ -15,41 +13,31 @@ BATCH_SIZE = 8
 NUM_EPOCHS = 100
 NUM_FOLDS = 5
 PATCH_SIZE = 256
-STRIDE_SIZE = 128
-STYLE = '100Epochs'
+STRIDE_SIZE = 64
+STYLE = 'Binary'
+NUM_CLASSES = 2
+
 compositions = {
     "False Color Urban": [7, 6, 4],
-    "RGB": [4, 3, 2],
     "Allbands": range(1, 8),
     "Color Infrared": [5, 4, 3],
     "Vegetative Analysis": [6, 5, 4],
     "Shortwave Infrared": [7, 5, 4],
-    "GA-1,4,5,6,7": [1, 4, 5, 6, 7]
 }
 
 regions_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 folds = np.array_split(regions_list, NUM_FOLDS)
 
-for fold in range(0, NUM_FOLDS):
-    train_regions = np.concatenate(
-        [regions for j, regions in enumerate(folds) if j != fold])
-    test_regions = folds[fold]
-    # regions = np.random.choice(range(1, 11), size=10, replace=False)
-    # (model, loss, lr, composition)
-    configs = [(smp.FPN(in_channels=len(compositions['Shortwave Infrared']),
-                        classes=3,
-                        activation='softmax'),
-                smp.utils.losses.CrossEntropyLoss(), 1e-3,
-                'Shortwave Infrared'),
-               (smp.PAN(in_channels=len(compositions['Shortwave Infrared']),
-                        classes=3,
-                        activation='softmax'), smp.utils.losses.JaccardLoss(),
-                1e-3, 'Shortwave Infrared'),
-               (smp.PAN(in_channels=len(compositions['Vegetative Analysis']),
-                        classes=3,
-                        activation='softmax'), smp.utils.losses.JaccardLoss(),
-                1e-3, 'Vegetative Analysis')]
-    for (model, loss, lr, composition) in configs:
+for COMPOSITION in compositions:
+    train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
+    test_regions = [3, 4]
+    CHANNELS = len(compositions[COMPOSITION])
+    # (model, loss, lr)
+    configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
+                                  classes=NUM_CLASSES,
+                                  activation='softmax'),
+                smp.utils.losses.JaccardLoss(), 1e-3)]
+    for (model, loss, lr) in configs:
         best_epoch = 0
         max_f1 = 0
         max_precision = 0
@@ -57,26 +45,26 @@ for fold in range(0, NUM_FOLDS):
         max_accuracy = 0
         max_recall = 0
 
-        encoder = OneHotEncoding(3)
+        encoder = OneHotEncoding(NUM_CLASSES)
 
         print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
         # instantiating datasets
         train_ds = XinguDataset('./dataset/scenes_allbands',
                                 './dataset/truth_masks',
                                 encoder,
-                                compositions[composition],
+                                compositions[COMPOSITION],
                                 train_regions,
                                 PATCH_SIZE,
                                 STRIDE_SIZE,
                                 transforms=True)
         test_ds = XinguDataset('./dataset/scenes_allbands',
                                './dataset/truth_masks', encoder,
-                               compositions[composition], test_regions,
+                               compositions[COMPOSITION], test_regions,
                                PATCH_SIZE, STRIDE_SIZE)
 
         writer = SummaryWriter(
             log_dir=
-            f"runs/{STYLE}-{model.__class__.__name__}_{loss.__class__.__name__}_Adam_{lr :.0e}-{composition}-fold-{fold}"
+            f"runs/{STYLE}-{model.__class__.__name__}_{loss.__class__.__name__}_Adam_{lr :.0e}-{COMPOSITION}"
         )
 
         optimizer = torch.optim.Adam([
@@ -131,7 +119,7 @@ for fold in range(0, NUM_FOLDS):
             if max_iou < test_logs['iou_score']:
                 torch.save(
                     model,
-                    f'./models/{STYLE}-{model.__class__.__name__}-{composition}.pth'
+                    f'./models/{STYLE}-{model.__class__.__name__}-{COMPOSITION}.pth'
                 )
                 max_iou = test_logs['iou_score']
                 max_precision = test_logs['precision']
@@ -173,10 +161,10 @@ for fold in range(0, NUM_FOLDS):
 
         max_memory_usage = torch.cuda.max_memory_reserved() / (1024**2)
         with open(
-                f'results/results-{STYLE}-{model.__class__.__name__}-{lr :.0e}-{composition}-fold-{fold}.txt',
+                f'results/results-{STYLE}-{model.__class__.__name__}-{lr :.0e}-{COMPOSITION}.txt',
                 'w') as f:
             f.write("TEST RESULTS\n")
-            f.write(f'{model.__class__.__name__}-{composition}-fold-{fold}\n')
+            f.write(f'{model.__class__.__name__}-{COMPOSITION}\n')
             f.write(f'Precision: {max_precision :.4f}\n')
             f.write(f'F1 Score: {max_f1 :.4f}\n')
             f.write(f'IoU: {max_iou :.4f}\n')
