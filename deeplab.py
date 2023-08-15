@@ -125,6 +125,11 @@ for COMPOSITION in compositions:
                         model,
                         f'./models/{INFO}-{model.__class__.__name__}-{COMPOSITION}.pth'
                     )
+                    torch.save(
+                        model.state_dict(),
+                        f'./models/{INFO}-{model.__class__.__name__}-{COMPOSITION}-StateDict.pth'
+                    )
+
                     max_iou = test_logs['iou_score']
                     max_precision = test_logs['precision']
                     max_f1 = test_logs['fscore']
