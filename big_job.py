@@ -3,7 +3,6 @@ import segmentation_models_pytorch as smp
 import segmentation_models_pytorch.utils as smpu
 from torch.utils.tensorboard import SummaryWriter
 from dataset.dataset import XinguDataset
-from dataset.onehotencoding import OneHotEncoding
 from datetime import datetime
 import glob
 import time
@@ -15,6 +14,8 @@ NUM_FOLDS = 5
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
 STYLE = 'FromScratch'
+NUM_CLASSES = 1
+
 compositions = {
     "False Color Urban": [7, 6, 4],
     "RGB": [4, 3, 2],
@@ -39,35 +40,35 @@ for COMPOSITION in compositions:
         CHANNELS = len(compositions[COMPOSITION])
         # (model, loss, lr)
         configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
-                                      classes=3,
+                                      classes=NUM_CLASSES,
                                       activation='softmax'),
                     smp.utils.losses.JaccardLoss(), 1e-3),
                    (smp.FPN(in_channels=CHANNELS,
-                            classes=3,
+                            classes=NUM_CLASSES,
                             activation='softmax'),
                     smp.utils.losses.CrossEntropyLoss(), 1e-3),
                    (smp.Linknet(in_channels=CHANNELS,
-                                classes=3,
+                                classes=NUM_CLASSES,
                                 activation='softmax'),
                     smp.utils.losses.DiceLoss(), 1e-4),
                    (smp.MAnet(in_channels=CHANNELS,
-                              classes=3,
+                              classes=NUM_CLASSES,
                               activation='softmax'),
                     smp.utils.losses.DiceLoss(), 1e-4),
                    (smp.PAN(in_channels=CHANNELS,
-                            classes=3,
+                            classes=NUM_CLASSES,
                             activation='softmax'),
                     smp.utils.losses.JaccardLoss(), 1e-3),
                    (smp.PSPNet(in_channels=CHANNELS,
-                               classes=3,
+                               classes=NUM_CLASSES,
                                activation='softmax'),
                     smp.utils.losses.DiceLoss(), 1e-3),
                    (smp.Unet(in_channels=CHANNELS,
-                             classes=3,
+                             classes=NUM_CLASSES,
                              activation='softmax'),
                     smp.utils.losses.JaccardLoss(), 1e-4),
                    (smp.UnetPlusPlus(in_channels=CHANNELS,
-                                     classes=3,
+                                     classes=NUM_CLASSES,
                                      activation='softmax'),
                     smp.utils.losses.DiceLoss(), 1e-3)]
         for (model, loss, lr) in configs:
@@ -78,20 +79,17 @@ for COMPOSITION in compositions:
             max_accuracy = 0
             max_recall = 0
 
-            encoder = OneHotEncoding(3)
-
             print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
             # instantiating datasets
             train_ds = XinguDataset('./dataset/scenes_allbands',
                                     './dataset/truth_masks',
-                                    encoder,
                                     compositions[COMPOSITION],
                                     train_regions,
                                     PATCH_SIZE,
                                     STRIDE_SIZE,
                                     transforms=True)
             test_ds = XinguDataset('./dataset/scenes_allbands',
-                                   './dataset/truth_masks', encoder,
+                                   './dataset/truth_masks',
                                    compositions[COMPOSITION], test_regions,
                                    PATCH_SIZE, STRIDE_SIZE)
 

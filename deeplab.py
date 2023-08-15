@@ -3,7 +3,6 @@ import segmentation_models_pytorch as smp
 import segmentation_models_pytorch.utils as smpu
 from torch.utils.tensorboard import SummaryWriter
 from dataset.dataset import XinguDataset
-from dataset.onehotencoding import OneHotEncoding
 from datetime import datetime
 import glob
 import time
@@ -15,7 +14,7 @@ NUM_FOLDS = 5
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
 STYLE = 'Binary'
-NUM_CLASSES = 2
+NUM_CLASSES = 1
 
 compositions = {
     "False Color Urban": [7, 6, 4],
@@ -35,7 +34,7 @@ for COMPOSITION in compositions:
     # (model, loss, lr)
     configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
                                   classes=NUM_CLASSES,
-                                  activation='softmax'),
+                                  activation='sigmoid'),
                 smp.utils.losses.JaccardLoss(), 1e-3)]
     for (model, loss, lr) in configs:
         best_epoch = 0
@@ -45,20 +44,17 @@ for COMPOSITION in compositions:
         max_accuracy = 0
         max_recall = 0
 
-        encoder = OneHotEncoding(NUM_CLASSES)
-
         print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
         # instantiating datasets
         train_ds = XinguDataset('./dataset/scenes_allbands',
                                 './dataset/truth_masks',
-                                encoder,
                                 compositions[COMPOSITION],
                                 train_regions,
                                 PATCH_SIZE,
                                 STRIDE_SIZE,
                                 transforms=True)
         test_ds = XinguDataset('./dataset/scenes_allbands',
-                               './dataset/truth_masks', encoder,
+                               './dataset/truth_masks',
                                compositions[COMPOSITION], test_regions,
                                PATCH_SIZE, STRIDE_SIZE)
 
