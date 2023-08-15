@@ -4,6 +4,7 @@ dataset
 models
 results
 runs
+mlruns
 
 __pycache__
 dataset_test.ipynb
