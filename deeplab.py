@@ -7,20 +7,24 @@ from datetime import datetime
 import glob
 import time
 import numpy as np
+import os
 
 BATCH_SIZE = 64
-NUM_EPOCHS = 3
+NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'Test_MLFlow'
+INFO = 'GeneticCombinations'
 NUM_CLASSES = 1
 
+os.environ['MLFLOW_EXPERIMENT_NAME'] = 'Genetic_Combinations'
+
 compositions = {
-    "False Color Urban": [7, 6, 4],
-    "Allbands": range(1, 8),
-    "Color Infrared": [5, 4, 3],
-    "Vegetative Analysis": [6, 5, 4],
-    "Shortwave Infrared": [7, 5, 4],
+    "6": [6],
+    "65": [6, 5],
+    "651": [6, 5, 1],
+    "6513": [6, 5, 1, 3],
+    "6514": [6, 5, 1, 4],
+    "6517": [6, 5, 1, 7],
 }
 
 train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
