@@ -10,3 +10,4 @@ __pycache__
 dataset_test.ipynb
 *.out
 *.yml
+lightning_logs
