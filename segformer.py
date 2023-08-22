@@ -5,11 +5,11 @@ import pytorch_lightning as pl
 from dataset.dataset import XinguDataset
 
 # Set your constants here
-BATCH_SIZE = 8
-NUM_EPOCHS = 10
+BATCH_SIZE = 32
+NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'SegformerTest'
+INFO = 'GeneticCombinations'
 NUM_CLASSES = 1
 
 
@@ -25,12 +25,19 @@ class SegmentationModel(pl.LightningModule):
         self.test_regions = test_regions
         self.batch_size = batch_size
 
-    def calculate_iou(self, preds, targets):
+    def calculate_iou(self, preds, targets, eps=1e-6):
         # Calculate intersection and union
         intersection = torch.sum(preds * targets)
-        union = torch.sum((preds + targets) - (preds * targets))
-        iou = intersection / union
+        union = torch.sum(preds) + torch.sum(targets) - intersection
+
+        iou = intersection / (union + eps)
         return iou
+    
+    def process_outputs(self, outputs, targets):
+        outputs = torch.nn.functional.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)
+        sigmoid = torch.nn.Sigmoid()
+        outputs = sigmoid(outputs)
+        return outputs
 
     def on_fit_start(self):
         self.logger.log_hyperparams({
@@ -65,6 +72,7 @@ class SegmentationModel(pl.LightningModule):
         return DataLoader(train_ds,
                           batch_size=self.batch_size,
                           drop_last=True,
+                          num_workers=12,
                           shuffle=True)
 
     def val_dataloader(self):
@@ -74,28 +82,28 @@ class SegmentationModel(pl.LightningModule):
         return DataLoader(test_ds,
                           batch_size=self.batch_size,
                           drop_last=True,
+                          num_workers=12,
                           shuffle=False)
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
         out_model = self.model(inputs)
         outputs = out_model.logits
-        # Resize outputs to match the target size
-        outputs = torch.nn.functional.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)
-        
-        loss = self.loss(outputs, targets)
-        self.log('train_loss', loss, on_epoch=True)
+        preds = self.process_outputs(outputs, targets)     
+        loss = self.loss(preds, targets)
+        iou = self.calculate_iou(preds, targets)
+        self.log('train_iou', iou)
+        self.log('train_loss', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
         out_model = self.model(inputs)
         outputs = out_model.logits
-        # Resize outputs to match the target size
-        outputs = torch.nn.functional.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)
-        
-        loss = self.loss(outputs, targets)
-        iou = self.calculate_iou(outputs, targets)
+        preds = self.process_outputs(outputs, targets)
+        preds = (preds > 0.5).float()        
+        loss = self.loss(preds, targets)
+        iou = self.calculate_iou(preds, targets)
         self.log('val_loss', loss, on_epoch=True)
         self.log('val_iou', iou, on_epoch=True)
 
@@ -105,6 +113,9 @@ compositions = {
     "6": [6],
     "65": [6, 5],
     "651": [6, 5, 1],
+    "6513": [6, 5, 1, 3],
+    "6514": [6, 5, 1, 4],
+    "6517": [6, 5, 1, 7]
 }
 
 train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
@@ -119,9 +130,8 @@ for COMPOSITION in compositions:
     for (model, loss, lr) in configs:
         model = SegmentationModel(model, loss, lr, compositions[COMPOSITION],
                                   train_regions, test_regions, BATCH_SIZE)
-        run_name = f'{COMPOSITION}_SegformerTest'
-        logger = pl.loggers.MLFlowLogger(experiment_name=INFO,
-                                         run_name=run_name)
+        # run_name = f'{COMPOSITION}_{model.__class__.__name__}'
+        logger = pl.loggers.MLFlowLogger(experiment_name=INFO)
         trainer = pl.Trainer(
             logger=logger,
             max_epochs=NUM_EPOCHS,
