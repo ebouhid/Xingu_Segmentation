@@ -2,25 +2,19 @@ import torch
 from transformers import SegformerForSemanticSegmentation, SegformerConfig
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from dataset.dataset import XinguDataset
+from dataset.dataset_pca import XinguDataset
 
 # Set your constants here
 BATCH_SIZE = 32
-NUM_WORKERS = 20    
+NUM_WORKERS = 20
 NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'RGB'
+INFO = 'PCA'
 NUM_CLASSES = 1
 
-compositions = {
-    "6": [6],
-    "65": [6, 5],
-    "651": [6, 5, 1],
-    "6513": [6, 5, 1, 3],
-    "6514": [6, 5, 1, 4],
-    "6517": [6, 5, 1, 7]
-}
+compositions = {"PCA": range(1, 4)}
+
 
 class SegmentationDataModule(pl.LightningDataModule):
     def __init__(self, compositions, train_regions, test_regions, batch_size):
@@ -31,7 +25,7 @@ class SegmentationDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
 
     def setup(self, stage=None):
-        train_ds = XinguDataset('./dataset/scenes_allbands',
+        train_ds = XinguDataset('./dataset/scenes_pca',
                                 './dataset/truth_masks',
                                 self.compositions,
                                 self.train_regions,
@@ -39,9 +33,9 @@ class SegmentationDataModule(pl.LightningDataModule):
                                 STRIDE_SIZE,
                                 transforms=True)
 
-        test_ds = XinguDataset('./dataset/scenes_allbands',
-                               './dataset/truth_masks', self.compositions,
-                               self.test_regions, PATCH_SIZE, STRIDE_SIZE)
+        test_ds = XinguDataset('./dataset/scenes_pca', './dataset/truth_masks',
+                               self.compositions, self.test_regions,
+                               PATCH_SIZE, STRIDE_SIZE)
 
         self.train_dataset = train_ds
         self.val_dataset = test_ds
@@ -143,6 +137,7 @@ class SegmentationModel(pl.LightningModule):
         self.log('val_recall', recall, on_epoch=True)
         self.log('val_fscore', fscore, on_epoch=True)
 
+
 train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
 test_regions = [3, 4]
 
@@ -154,8 +149,8 @@ for COMPOSITION in compositions:
                 torch.nn.BCEWithLogitsLoss(), 1e-3)]
 
     for (model, loss, lr) in configs:
-        model = SegmentationModel(model, loss, lr, compositions[COMPOSITION],
-                                  train_regions, test_regions, BATCH_SIZE)
+        model = SegmentationModel(model, loss, lr, COMPOSITION, train_regions,
+                                  test_regions, BATCH_SIZE)
         # run_name = f'{COMPOSITION}_{model.__class__.__name__}'
         logger = pl.loggers.MLFlowLogger(experiment_name=INFO)
         trainer = pl.Trainer(
