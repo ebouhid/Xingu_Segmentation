@@ -9,44 +9,41 @@ import time
 import numpy as np
 import os
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'GeneticCombinations'
+INFO = 'FromScratch_control'
 NUM_CLASSES = 1
 
 os.environ['MLFLOW_EXPERIMENT_NAME'] = INFO
 
-compositions = {
-    "6": [6],
-    "65": [6, 5],
-    "651": [6, 5, 1],
-    "6513": [6, 5, 1, 3],
-    "6514": [6, 5, 1, 4],
-    "6517": [6, 5, 1, 7],
-}
+compositions = {"Allbands_and_NDVI": range(1, 9), "RGB": [4, 3, 2], "6": [6]}
 
-train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
+train_regions = [1, 2, 5, 6, 7, 8, 9, 10]  # Do not use region 5 anywhere
 test_regions = [3, 4]
 for COMPOSITION in compositions:
     CHANNELS = len(compositions[COMPOSITION])
     # (model, loss, lr)
-    configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
-                                  classes=NUM_CLASSES,
-                                  activation='sigmoid'),
-                smp.utils.losses.JaccardLoss(), 1e-3),
-               (smp.UnetPlusPlus(in_channels=CHANNELS,
-                                 classes=NUM_CLASSES,
-                                 activation='sigmoid'),
-                smp.utils.losses.JaccardLoss(), 1e-3),
-               (smp.MAnet(in_channels=CHANNELS,
-                          classes=NUM_CLASSES,
-                          activation='sigmoid'),
-                smp.utils.losses.JaccardLoss(), 1e-3)]
+    configs = [
+        (smp.DeepLabV3Plus(
+            in_channels=CHANNELS,
+            classes=NUM_CLASSES,
+            activation='sigmoid',
+            encoder_name='resnet34',
+            encoder_weights=None,
+        ), smp.utils.losses.JaccardLoss(), 1e-3),
+        # (smp.UnetPlusPlus(in_channels=CHANNELS,
+        #                   classes=NUM_CLASSES,
+        #                   activation='sigmoid'),
+        #  smp.utils.losses.JaccardLoss(), 1e-3),
+        # (smp.MAnet(in_channels=CHANNELS,
+        #            classes=NUM_CLASSES,
+        #            activation='sigmoid'), smp.utils.losses.JaccardLoss(), 1e-3)
+    ]
 
-    with mlflow.start_run():
-        for (model, loss, lr) in configs:
+    for (model, loss, lr) in configs:
+        with mlflow.start_run():
             best_epoch = 0
             max_f1 = 0
             max_precision = 0
@@ -56,17 +53,20 @@ for COMPOSITION in compositions:
 
             print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
             # instantiating datasets
-            train_ds = XinguDataset('./dataset/scenes_allbands',
+            train_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                     './dataset/truth_masks',
                                     compositions[COMPOSITION],
                                     train_regions,
                                     PATCH_SIZE,
                                     STRIDE_SIZE,
                                     transforms=True)
-            test_ds = XinguDataset('./dataset/scenes_allbands',
+            test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                    './dataset/truth_masks',
-                                   compositions[COMPOSITION], test_regions,
-                                   PATCH_SIZE, STRIDE_SIZE)
+                                   compositions[COMPOSITION],
+                                   test_regions,
+                                   PATCH_SIZE,
+                                   STRIDE_SIZE,
+                                   transforms=False)
 
             optimizer = torch.optim.Adam([
                 dict(params=model.parameters(), lr=lr),
@@ -108,6 +108,7 @@ for COMPOSITION in compositions:
                 dataset=test_ds,
                 batch_size=BATCH_SIZE,
                 drop_last=True,
+                shuffle=False,
             )
 
             # logging parameters

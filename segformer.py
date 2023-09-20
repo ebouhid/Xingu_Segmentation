@@ -2,7 +2,7 @@ import torch
 from transformers import SegformerForSemanticSegmentation, SegformerConfig
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from dataset.dataset_pca import XinguDataset
+from dataset.dataset import XinguDataset
 
 # Set your constants here
 BATCH_SIZE = 32
@@ -10,10 +10,10 @@ NUM_WORKERS = 20
 NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'PCA'
+INFO = 'Allbands_and_NDVI'
 NUM_CLASSES = 1
 
-compositions = {"PCA": range(1, 4)}
+compositions = {"Allbands_and_NDVI": range(1, 9)}
 
 
 class SegmentationDataModule(pl.LightningDataModule):
@@ -25,7 +25,7 @@ class SegmentationDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
 
     def setup(self, stage=None):
-        train_ds = XinguDataset('./dataset/scenes_pca',
+        train_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                 './dataset/truth_masks',
                                 self.compositions,
                                 self.train_regions,
@@ -33,9 +33,9 @@ class SegmentationDataModule(pl.LightningDataModule):
                                 STRIDE_SIZE,
                                 transforms=True)
 
-        test_ds = XinguDataset('./dataset/scenes_pca', './dataset/truth_masks',
-                               self.compositions, self.test_regions,
-                               PATCH_SIZE, STRIDE_SIZE)
+        test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
+                               './dataset/truth_masks', self.compositions,
+                               self.test_regions, PATCH_SIZE, STRIDE_SIZE)
 
         self.train_dataset = train_ds
         self.val_dataset = test_ds
