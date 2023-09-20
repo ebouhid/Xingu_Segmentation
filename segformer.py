@@ -35,7 +35,7 @@ class SegmentationDataModule(pl.LightningDataModule):
 
         test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                './dataset/truth_masks', self.compositions,
-                               self.test_regions, PATCH_SIZE, STRIDE_SIZE)
+                               self.test_regions, PATCH_SIZE, PATCH_SIZE)
 
         self.train_dataset = train_ds
         self.val_dataset = test_ds

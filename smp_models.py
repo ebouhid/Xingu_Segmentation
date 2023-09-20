@@ -65,7 +65,7 @@ for COMPOSITION in compositions:
                                    compositions[COMPOSITION],
                                    test_regions,
                                    PATCH_SIZE,
-                                   STRIDE_SIZE,
+                                   PATCH_SIZE,
                                    transforms=False)
 
             optimizer = torch.optim.Adam([
