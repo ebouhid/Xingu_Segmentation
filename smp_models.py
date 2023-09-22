@@ -33,13 +33,6 @@ for COMPOSITION in compositions:
             encoder_name='resnet34',
             encoder_weights=None,
         ), smp.utils.losses.JaccardLoss(), 1e-3),
-        # (smp.UnetPlusPlus(in_channels=CHANNELS,
-        #                   classes=NUM_CLASSES,
-        #                   activation='sigmoid'),
-        #  smp.utils.losses.JaccardLoss(), 1e-3),
-        # (smp.MAnet(in_channels=CHANNELS,
-        #            classes=NUM_CLASSES,
-        #            activation='sigmoid'), smp.utils.losses.JaccardLoss(), 1e-3)
     ]
 
     for (model, loss, lr) in configs:
