@@ -90,16 +90,13 @@ for COMPOSITION in compositions:
             train_dataloader = torch.utils.data.DataLoader(
                 dataset=train_ds,
                 batch_size=BATCH_SIZE,
-                drop_last=True,
                 shuffle=True,
                 num_workers=8)
 
-            test_dataloader = torch.utils.data.DataLoader(
-                dataset=test_ds,
-                batch_size=BATCH_SIZE,
-                drop_last=True,
-                shuffle=False,
-                num_workers=8)
+            test_dataloader = torch.utils.data.DataLoader(dataset=test_ds,
+                                                          batch_size=8,
+                                                          shuffle=False,
+                                                          num_workers=8)
 
             # logging parameters
             mlflow.log_params({
@@ -117,7 +114,6 @@ for COMPOSITION in compositions:
             })
 
             start = time.time()
-            torch.cuda.reset_max_memory_allocated()
 
             for epoch in range(1, NUM_EPOCHS + 1):
                 print(f'\nEpoch: {epoch}')
