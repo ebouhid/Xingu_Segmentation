@@ -25,6 +25,8 @@ compositions = {
     "6513": [6, 5, 1, 3],
     "6514": [6, 5, 1, 4],
     "6517": [6, 5, 1, 7],
+    "All+NDVI": range(1, 8),
+    "RGB": [4, 3, 2]
 }
 
 train_regions = [1, 2, 6, 7, 8, 9, 10]
@@ -47,14 +49,14 @@ for COMPOSITION in compositions:
 
             print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
             # instantiating datasets
-            train_ds = XinguDataset('./dataset/scenes_allbands',
+            train_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                     './dataset/truth_masks',
                                     compositions[COMPOSITION],
                                     train_regions,
                                     PATCH_SIZE,
                                     STRIDE_SIZE,
                                     transforms=True)
-            test_ds = XinguDataset('./dataset/scenes_allbands',
+            test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                    './dataset/truth_masks',
                                    compositions[COMPOSITION], test_regions,
                                    PATCH_SIZE, STRIDE_SIZE)
