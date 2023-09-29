@@ -168,7 +168,6 @@ for COMPOSITION in compositions:
             minutes = int(execution_time // 60)
             seconds = int(execution_time % 60)
 
-            max_memory_usage = torch.cuda.max_memory_reserved() / (1024**2)
             with open(
                     f'results/results-{INFO}-{model.__class__.__name__}-{lr :.0e}-{COMPOSITION}.txt',
                     'w') as f:
@@ -181,4 +180,3 @@ for COMPOSITION in compositions:
                 f.write(f'Recall: {max_recall :.4f}\n')
                 f.write(f'On epoch: {best_epoch}\n')
                 f.write(f'Time: {minutes}m {seconds}s\n')
-                f.write(f'Memória (MiB): {max_memory_usage}\n')
