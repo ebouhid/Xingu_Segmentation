@@ -3,10 +3,7 @@ import segmentation_models_pytorch as smp
 import segmentation_models_pytorch.utils as smpu
 import mlflow
 from dataset.dataset import XinguDataset
-from datetime import datetime
-import glob
 import time
-import numpy as np
 import os
 
 BATCH_SIZE = 64
