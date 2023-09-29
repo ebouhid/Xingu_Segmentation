@@ -13,10 +13,10 @@ BATCH_SIZE = 64
 NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'GeneticCombinations'
+INFO = 'RecentVsAll'
 NUM_CLASSES = 1
 
-os.environ['MLFLOW_EXPERIMENT_NAME'] = 'Genetic_Combinations'
+os.environ['MLFLOW_EXPERIMENT_NAME'] = 'RecentVsAll'
 
 compositions = {
     "6": [6],
@@ -27,7 +27,7 @@ compositions = {
     "6517": [6, 5, 1, 7],
 }
 
-train_regions = [1, 2, 5, 6, 7, 8, 9, 10]
+train_regions = [1, 2, 6, 7, 8, 9, 10]
 test_regions = [3, 4]
 for COMPOSITION in compositions:
     CHANNELS = len(compositions[COMPOSITION])
