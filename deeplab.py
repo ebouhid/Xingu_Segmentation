@@ -59,7 +59,7 @@ for COMPOSITION in compositions:
             test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
                                    './dataset/truth_masks',
                                    compositions[COMPOSITION], test_regions,
-                                   PATCH_SIZE, STRIDE_SIZE)
+                                   PATCH_SIZE, PATCH_SIZE)
 
             optimizer = torch.optim.Adam([
                 dict(params=model.parameters(), lr=lr),
