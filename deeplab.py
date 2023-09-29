@@ -95,13 +95,14 @@ for COMPOSITION in compositions:
                 batch_size=BATCH_SIZE,
                 drop_last=True,
                 shuffle=True,
-            )
+                num_workers=8)
 
             test_dataloader = torch.utils.data.DataLoader(
                 dataset=test_ds,
                 batch_size=BATCH_SIZE,
                 drop_last=True,
-            )
+                shuffle=False,
+                num_workers=8)
 
             # logging parameters
             mlflow.log_params({
