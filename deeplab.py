@@ -5,6 +5,7 @@ import mlflow
 from dataset.dataset import XinguDataset
 import time
 import os
+from focal_loss.focal_loss import FocalLoss
 
 BATCH_SIZE = 64
 NUM_EPOCHS = 100
@@ -34,7 +35,11 @@ for COMPOSITION in compositions:
     configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
                                   classes=NUM_CLASSES,
                                   activation='sigmoid'),
-                smp.utils.losses.JaccardLoss(), 1e-3)]
+                smp.utils.losses.BCELoss(), 5e-4),
+               (smp.DeepLabV3Plus(in_channels=CHANNELS,
+                                  classes=NUM_CLASSES,
+                                  activation='sigmoid'), FocalLoss(gamma=2),
+                5e-4)]
     with mlflow.start_run():
         for (model, loss, lr) in configs:
             best_epoch = 0
@@ -46,17 +51,12 @@ for COMPOSITION in compositions:
 
             print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
             # instantiating datasets
-            train_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
-                                    './dataset/truth_masks',
-                                    compositions[COMPOSITION],
-                                    train_regions,
-                                    PATCH_SIZE,
-                                    STRIDE_SIZE,
-                                    transforms=True)
-            test_ds = XinguDataset('./dataset/scenes_allbands_ndvi',
-                                   './dataset/truth_masks',
-                                   compositions[COMPOSITION], test_regions,
-                                   PATCH_SIZE, PATCH_SIZE)
+            train_ds = XinguDataset('./dataset/selected_patches/train/images',
+                                    './dataset/selected_patches/train/masks',
+                                    compositions[COMPOSITION], True)
+            test_ds = XinguDataset('./dataset/selected_patches/test/images',
+                                   './dataset/selected_patches/test/masks',
+                                   compositions[COMPOSITION], True)
 
             optimizer = torch.optim.Adam([
                 dict(params=model.parameters(), lr=lr),
@@ -123,11 +123,11 @@ for COMPOSITION in compositions:
                 if max_iou < test_logs['iou_score']:
                     torch.save(
                         model,
-                        f'./models/{INFO}-{model.__class__.__name__}-{COMPOSITION}.pth'
+                        f'./models/{INFO}-{model.__class__.__name__}-{loss.__class__.__name__}-{COMPOSITION}.pth'
                     )
                     torch.save(
                         model.state_dict(),
-                        f'./models/{INFO}-{model.__class__.__name__}-{COMPOSITION}-StateDict.pth'
+                        f'./models/{INFO}-{model.__class__.__name__}-{loss.__class__.__name__}-{COMPOSITION}-StateDict.pth'
                     )
 
                     max_iou = test_logs['iou_score']
@@ -176,3 +176,4 @@ for COMPOSITION in compositions:
                 f.write(f'Recall: {max_recall :.4f}\n')
                 f.write(f'On epoch: {best_epoch}\n')
                 f.write(f'Time: {minutes}m {seconds}s\n')
+                f.write(f'Loss: {loss.__class__.__name__}\n')
