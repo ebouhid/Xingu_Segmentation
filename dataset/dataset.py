@@ -10,7 +10,6 @@ class XinguDataset(Dataset):
                  scenes_dir,
                  masks_dir,
                  composition,
-                 regions,
                  patch_size,
                  stride_size,
                  transforms=None):
@@ -29,22 +28,16 @@ class XinguDataset(Dataset):
         self.images = []
         self.masks = []
 
-        self.regions = regions
         self.transforms = transforms
         self.angle_inc = 45
 
         # load scenes
         for img_scene in self.image_paths:
-            id = int((img_scene.split('_')[-1].split('.')[0])[1:])
-            if id in regions:
-                self.images.append(
-                    np.load(os.path.join(self.img_path, img_scene)))
+            self.images.append(np.load(os.path.join(self.img_path, img_scene)))
 
         for msk_scene in self.mask_paths:
-            id = int((msk_scene.split('_')[-1].split('.')[0])[1:])
-            if id in regions:
-                self.masks.append(
-                    np.load(os.path.join(self.msk_path, msk_scene)).squeeze())
+            self.masks.append(
+                np.load(os.path.join(self.msk_path, msk_scene)).squeeze())
 
         # patchify
         self.img_patches = []
