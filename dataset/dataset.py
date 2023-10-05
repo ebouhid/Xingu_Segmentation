@@ -1,7 +1,6 @@
 from torch.utils.data import Dataset
 import os
 import numpy as np
-import warnings
 
 
 class XinguDataset(Dataset):
@@ -30,9 +29,6 @@ class XinguDataset(Dataset):
             self.masks.append(
                 np.load(os.path.join(self.msk_path, msk_scene)).squeeze())
 
-        if self.transforms:
-            warnings.warn('Transforms are not implemented yet.', UserWarning)
-
         assert len(self.images) == len(self.masks)
 
     def __len__(self):
@@ -41,8 +37,6 @@ class XinguDataset(Dataset):
     def __getitem__(self, idx):
         image = self.images[idx]
         mask = self.masks[idx]
-
-        # image = image.transpose(2, 0, 1)
 
         # create composition
         nbands = len(self.composition)
@@ -65,9 +59,11 @@ class XinguDataset(Dataset):
             # Convert combination and mask back to numpy type
             combination = np.array(combination)
             mask = np.array(mask)
+
+            # Add back the channel dimension to the mask
+            mask = np.expand_dims(mask, axis=0)
         else:
-            # Reshape image and mask to (C, H, W)
+            # Reshape image to (C, H, W)
             combination = combination.transpose(2, 0, 1)
-            mask = mask.transpose(2, 0, 1)
 
         return combination, mask
