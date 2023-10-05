@@ -35,69 +35,63 @@ for COMPOSITION in compositions:
     configs = [(smp.DeepLabV3Plus(in_channels=CHANNELS,
                                   classes=NUM_CLASSES,
                                   activation='sigmoid'),
-                smp.utils.losses.BCELoss(), 5e-4),
-               (smp.DeepLabV3Plus(in_channels=CHANNELS,
-                                  classes=NUM_CLASSES,
-                                  activation='sigmoid'), FocalLoss(gamma=2),
-                5e-4)]
-    with mlflow.start_run():
-        for (model, loss, lr) in configs:
-            best_epoch = 0
-            max_f1 = 0
-            max_precision = 0
-            max_iou = 0
-            max_accuracy = 0
-            max_recall = 0
+                smp.utils.losses.BCELoss(), 5e-4)]
+    for (model, loss, lr) in configs:
+        best_epoch = 0
+        max_f1 = 0
+        max_precision = 0
+        max_iou = 0
+        max_accuracy = 0
+        max_recall = 0
 
-            print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
-            # instantiating datasets
-            train_ds = XinguDataset('./dataset/selected_patches/train/images',
-                                    './dataset/selected_patches/train/masks',
-                                    compositions[COMPOSITION], True)
-            test_ds = XinguDataset('./dataset/selected_patches/test/images',
-                                   './dataset/selected_patches/test/masks',
-                                   compositions[COMPOSITION], True)
+        print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
+        # instantiating datasets
+        train_ds = XinguDataset('./dataset/selected_patches/train/images',
+                                './dataset/selected_patches/train/masks',
+                                compositions[COMPOSITION], True)
+        test_ds = XinguDataset('./dataset/selected_patches/test/images',
+                               './dataset/selected_patches/test/masks',
+                               compositions[COMPOSITION], True)
 
-            optimizer = torch.optim.Adam([
-                dict(params=model.parameters(), lr=lr),
-            ])
+        optimizer = torch.optim.Adam([
+            dict(params=model.parameters(), lr=lr),
+        ])
 
-            metrics = [
-                smp.utils.metrics.IoU(),
-                smp.utils.metrics.Fscore(),
-                smp.utils.metrics.Precision(),
-                smp.utils.metrics.Accuracy(),
-                smp.utils.metrics.Recall()
-            ]
+        metrics = [
+            smp.utils.metrics.IoU(),
+            smp.utils.metrics.Fscore(),
+            smp.utils.metrics.Precision(),
+            smp.utils.metrics.Accuracy(),
+            smp.utils.metrics.Recall()
+        ]
 
-            train_epoch = smp.utils.train.TrainEpoch(
-                model,
-                loss=loss,
-                metrics=metrics,
-                optimizer=optimizer,
-                device='cuda',
-                verbose=True,
-            )
-            test_epoch = smp.utils.train.ValidEpoch(
-                model,
-                loss=loss,
-                metrics=metrics,
-                device='cuda',
-                verbose=True,
-            )
+        train_epoch = smp.utils.train.TrainEpoch(
+            model,
+            loss=loss,
+            metrics=metrics,
+            optimizer=optimizer,
+            device='cuda',
+            verbose=True,
+        )
+        test_epoch = smp.utils.train.ValidEpoch(
+            model,
+            loss=loss,
+            metrics=metrics,
+            device='cuda',
+            verbose=True,
+        )
 
-            # dataloaders for this fold
-            train_dataloader = torch.utils.data.DataLoader(
-                dataset=train_ds,
-                batch_size=BATCH_SIZE,
-                shuffle=True,
-                num_workers=8)
+        # dataloaders for this fold
+        train_dataloader = torch.utils.data.DataLoader(dataset=train_ds,
+                                                       batch_size=BATCH_SIZE,
+                                                       shuffle=True,
+                                                       num_workers=8)
 
-            test_dataloader = torch.utils.data.DataLoader(dataset=test_ds,
-                                                          batch_size=8,
-                                                          shuffle=False,
-                                                          num_workers=8)
-
+        test_dataloader = torch.utils.data.DataLoader(dataset=test_ds,
+                                                      batch_size=8,
+                                                      shuffle=False,
+                                                      num_workers=8)
+        with mlflow.start_run():
             # logging parameters
             mlflow.log_params({
                 "model": model.__class__.__name__,
