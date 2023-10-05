@@ -42,15 +42,14 @@ class XinguDataset(Dataset):
         image = self.images[idx]
         mask = self.masks[idx]
 
-        image = image.transpose(2, 0, 1)
+        # image = image.transpose(2, 0, 1)
 
         # create composition
         nbands = len(self.composition)
-        combination = np.zeros((nbands, ) + image.shape[1:])
-        # print(f'combination shape: {combination.shape}')
+        combination = np.zeros(image.shape[:2] + (nbands, ))
 
         for i in range(nbands):
-            combination[i, :, :] = image[(self.composition[i] - 1), :, :]
+            combination[:, :, i] = image[:, :, self.composition[i] - 1]
 
         combination = np.float32(combination) / 255
 
@@ -58,5 +57,17 @@ class XinguDataset(Dataset):
         mask = np.float32(mask)
 
         combination = combination.astype(np.float32)
+        if self.transforms is not None:
+            # Apply Albumentations transforms
+            augmented = self.transforms(image=combination, mask=mask.squeeze())
+            combination = augmented['image']
+            mask = augmented['mask']
+            # Convert combination and mask back to numpy type
+            combination = np.array(combination)
+            mask = np.array(mask)
+        else:
+            # Reshape image and mask to (C, H, W)
+            combination = combination.transpose(2, 0, 1)
+            mask = mask.transpose(2, 0, 1)
 
         return combination, mask
