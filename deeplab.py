@@ -5,13 +5,14 @@ import mlflow
 from dataset.dataset import XinguDataset
 import time
 import os
-from focal_loss.focal_loss import FocalLoss
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 BATCH_SIZE = 64
 NUM_EPOCHS = 100
 PATCH_SIZE = 256
 STRIDE_SIZE = 64
-INFO = 'RecentVsAll'
+INFO = 'WithTransforms'
 NUM_CLASSES = 1
 
 os.environ['MLFLOW_EXPERIMENT_NAME'] = 'RecentVsAll'
@@ -23,7 +24,7 @@ compositions = {
     "6513": [6, 5, 1, 3],
     "6514": [6, 5, 1, 4],
     "6517": [6, 5, 1, 7],
-    "All+NDVI": range(1, 8),
+    "All+NDVI": range(1, 9),
     "RGB": [4, 3, 2]
 }
 
@@ -45,13 +46,25 @@ for COMPOSITION in compositions:
         max_recall = 0
 
         print(f"{10 * '#'} {model.__class__.__name__} {10*'#'}")
+
         # instantiating datasets
+        # Define transform pipeline
+        transforms = A.Compose([
+            A.Resize(256, 256),
+            A.Rotate(limit=90, p=0.8),
+            A.HorizontalFlip(),
+            A.VerticalFlip(),
+            A.RandomBrightnessContrast(),
+            ToTensorV2(),
+        ])
         train_ds = XinguDataset('./dataset/selected_patches/train/images',
                                 './dataset/selected_patches/train/masks',
-                                compositions[COMPOSITION], True)
+                                compositions[COMPOSITION],
+                                transforms=transforms)
         test_ds = XinguDataset('./dataset/selected_patches/test/images',
                                './dataset/selected_patches/test/masks',
-                               compositions[COMPOSITION], True)
+                               compositions[COMPOSITION],
+                               transforms=None)
 
         optimizer = torch.optim.Adam([
             dict(params=model.parameters(), lr=lr),
